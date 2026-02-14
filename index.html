@@ -8,78 +8,84 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             height: 100vh;
             overflow: hidden;
             font-family: 'Inter', sans-serif;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
         }
-        .message-in { align-self: flex-start; background: rgba(255,255,255,0.2); }
-        .message-out { align-self: flex-end; background: rgba(99, 102, 241, 0.4); }
-        ::-webkit-scrollbar { width: 5px; }
+        .message-in { align-self: flex-start; background: rgba(255,255,255,0.15); border-radius: 16px 16px 16px 4px; }
+        .message-out { align-self: flex-end; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px 16px 4px 16px; }
+        ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     </style>
 </head>
-<body class="flex items-center justify-center p-4">
+<body class="flex items-center justify-center p-4 text-white">
 
-    <div class="glass w-full max-w-6xl h-[85vh] rounded-3xl overflow-hidden flex">
+    <div class="glass w-full max-w-6xl h-[90vh] rounded-3xl overflow-hidden flex shadow-2xl">
         <!-- Sidebar -->
-        <div class="w-1/4 border-r border-white/10 flex flex-col">
+        <div class="w-1/4 min-w-[250px] border-r border-white/10 flex flex-col bg-black/10">
             <div class="p-6">
-                <h1 class="text-white text-xl font-bold flex items-center gap-2">
-                    <i data-lucide="zap" class="text-yellow-400"></i> LAN Chat
+                <h1 class="text-xl font-bold flex items-center gap-2 tracking-wide">
+                    <i data-lucide="ghost" class="text-indigo-400"></i> GhostLAN
                 </h1>
+                <div class="text-xs text-white/40 mt-1">ID: <span id="myIdDisplay" class="font-mono text-indigo-300">...</span></div>
             </div>
-            <div id="userList" class="flex-1 overflow-y-auto p-4 space-y-2">
-                <!-- Сюда будут добавляться устройства -->
-                <div class="text-white/50 text-sm text-center mt-10">Поиск устройств в сети...</div>
+            <div id="userList" class="flex-1 overflow-y-auto p-3 space-y-2">
+                <div class="text-white/30 text-sm text-center mt-10 animate-pulse">Scanning network...</div>
             </div>
             <div class="p-4 border-t border-white/10">
-                <button onclick="clearAllHistory()" class="text-xs text-white/40 hover:text-red-400 transition flex items-center gap-1">
-                    <i data-lucide="trash-2" class="w-3"></i> Очистить всю историю
+                <button onclick="clearAllHistory()" class="w-full py-2 text-xs text-white/40 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition flex items-center justify-center gap-2">
+                    <i data-lucide="trash-2" class="w-3"></i> Wipe All Data
                 </button>
             </div>
         </div>
 
         <!-- Chat Area -->
-        <div id="chatPlaceholder" class="flex-1 flex flex-col items-center justify-center text-white/50">
-            <i data-lucide="message-square" class="w-16 h-16 mb-4 opacity-20"></i>
-            <p>Выберите устройство для начала общения</p>
+        <div id="chatPlaceholder" class="flex-1 flex flex-col items-center justify-center text-white/30">
+            <div class="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                <i data-lucide="radio" class="w-10 h-10"></i>
+            </div>
+            <p>Waiting for connection...</p>
         </div>
 
-        <div id="chatWindow" class="hidden flex-1 flex flex-col">
-            <div class="p-6 border-b border-white/10 flex justify-between items-center">
-                <div>
-                    <h2 id="activeUserName" class="text-white font-medium text-lg">Устройство</h2>
-                    <span class="text-green-400 text-xs flex items-center gap-1">
-                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span> Direct P2P Connected
-                    </span>
+        <div id="chatWindow" class="hidden flex-1 flex flex-col bg-gradient-to-br from-transparent to-black/20">
+            <div class="p-4 border-b border-white/10 flex justify-between items-center backdrop-blur-md bg-white/5">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center font-bold" id="activeUserAvatar">?</div>
+                    <div>
+                        <h2 id="activeUserName" class="font-medium">Device</h2>
+                        <span class="text-green-400 text-xs flex items-center gap-1 font-mono">
+                            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span> P2P ENCRYPTED
+                        </span>
+                    </div>
                 </div>
-                <button onclick="deleteChatWithActiveUser()" class="p-2 hover:bg-white/10 rounded-full text-white/60">
-                    <i data-lucide="user-minus"></i>
+                <button onclick="deleteChatWithActiveUser()" class="p-2 hover:bg-white/10 rounded-full text-white/60 transition">
+                    <i data-lucide="eraser"></i>
                 </button>
             </div>
 
-            <div id="messages" class="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
-                <!-- Сообщения -->
+            <div id="messages" class="flex-1 overflow-y-auto p-6 flex flex-col gap-3">
+                <!-- Messages go here -->
             </div>
 
-            <div class="p-6 bg-white/5">
-                <div class="flex gap-2">
-                    <label class="glass p-3 rounded-xl cursor-pointer hover:bg-white/20 transition">
-                        <i data-lucide="paperclip" class="text-white"></i>
-                        <input type="file" id="fileInput" class="hidden" onchange="sendFile()">
+            <div class="p-4">
+                <div class="glass p-1.5 rounded-2xl flex gap-2 items-center">
+                    <label class="p-3 cursor-pointer hover:bg-white/10 rounded-xl transition text-white/70">
+                        <i data-lucide="paperclip" class="w-5 h-5"></i>
+                        <!-- Пока выключено для простоты -->
+                        <input type="file" id="fileInput" class="hidden" disabled>
                     </label>
-                    <input type="text" id="msgInput" placeholder="Напишите что-нибудь..." 
-                           class="flex-1 bg-white/10 border border-white/20 rounded-xl px-4 text-white focus:outline-none focus:ring-2 ring-indigo-500/50">
-                    <button onclick="sendMessage()" class="bg-indigo-500 hover:bg-indigo-600 p-3 rounded-xl text-white transition">
-                        <i data-lucide="send"></i>
+                    <input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off"
+                           class="flex-1 bg-transparent border-none text-white focus:ring-0 placeholder-white/30 text-sm h-10">
+                    <button onclick="sendMessage()" class="bg-indigo-600 hover:bg-indigo-500 p-3 rounded-xl text-white transition shadow-lg shadow-indigo-500/30">
+                        <i data-lucide="send" class="w-5 h-5"></i>
                     </button>
                 </div>
             </div>
@@ -87,174 +93,226 @@
     </div>
 
     <script>
-        // Инициализация иконок
         lucide.createIcons();
 
-        const WORKER_URL = 'wss://twilight-mouse-a26f.lil-pro-lix.workers.dev/'; // ЗАМЕНИТЕ НА ВАШ
-        const myId = Math.random().toString(36).substr(2, 9);
-        let ws;
+        // ВСТАВЬ СЮДА СВОЙ URL ВОРКЕРА (БЕЗ 'wss://', теперь 'https://')
+        // Пример: 'https://twilight-mouse-a26f.lil-pro-lix.workers.dev'
+        const WORKER_URL = 'https://twilight-mouse-a26f.lil-pro-lix.workers.dev';
+
+        const myId = Math.random().toString(36).substr(2, 6).toUpperCase();
+        document.getElementById('myIdDisplay').innerText = myId;
+
         let activePeerId = null;
-        let connections = {}; // P2P соединения {peerId: { pc, dc }}
+        let connections = {}; // {peerId: {pc, dc, connected}}
         let history = JSON.parse(localStorage.getItem('chatHistory') || '{}');
-
-        // Подключение к Cloudflare Worker (сигналинг)
-        function initConnection() {
-            ws = new WebSocket(WORKER_URL);
-            
-            ws.onopen = () => {
-                // Объявляем о себе в сети
-                sendSignal({ type: 'join', id: myId });
-            };
-
-            ws.onmessage = async (e) => {
-                const data = JSON.parse(e.data);
-                if (data.id === myId) return;
-
-                switch(data.type) {
-                    case 'join':
-                        sendSignal({ type: 'presence', id: myId });
-                        setupP2P(data.id, true);
-                        break;
-                    case 'presence':
-                        setupP2P(data.id, false);
-                        break;
-                    case 'signal':
-                        handleSignal(data);
-                        break;
-                }
-            };
+        
+        // --- API & POLLING ---
+        
+        async function api(path, data) {
+            try {
+                const opts = data ? { method: 'POST', body: JSON.stringify(data) } : {};
+                const res = await fetch(`${WORKER_URL}${path}`, opts);
+                return data ? null : await res.json();
+            } catch (e) { console.error("API Error", e); return null; }
         }
 
-        function sendSignal(data) {
-            ws.send(JSON.stringify(data));
+        // 1. Говорим серверу "Я тут" каждые 4 секунды
+        setInterval(() => api('/heartbeat', { id: myId }), 4000);
+
+        // 2. Ищем соседей каждые 5 секунд
+        setInterval(async () => {
+            const users = await api('/users');
+            if (users) renderUserList(users.filter(id => id !== myId));
+        }, 5000);
+
+        // 3. Проверяем входящие сигналы каждую 1.5 секунды
+        setInterval(async () => {
+            const msgs = await api(`/check?id=${myId}`);
+            if (!msgs) return;
+            for (const msg of msgs) {
+                console.log("Got signal from", msg.from, msg.data.type);
+                handleSignal(msg.from, msg.data);
+            }
+        }, 1500);
+
+        function sendSignal(to, data) {
+            api('/signal', { to, from: myId, data });
         }
 
-        // WebRTC логика
-        function setupP2P(peerId, isOfferer) {
+        // --- WEBRTC CORE ---
+
+        function initiateConnection(peerId) {
             if (connections[peerId]) return;
+            console.log("Connecting to", peerId);
+            setupPeer(peerId, true);
+        }
 
-            const pc = new RTCPeerConnection({
-                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-            });
+        function setupPeer(peerId, isInitiator) {
+            const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+            const conn = { pc, dc: null, connected: false };
+            connections[peerId] = conn;
 
-            const dc = isOfferer 
-                ? pc.createDataChannel("chat") 
-                : null;
-
-            connections[peerId] = { pc, dc };
-
-            if (dc) setupDataChannel(peerId, dc);
-
-            pc.ondatachannel = (event) => {
-                connections[peerId].dc = event.channel;
-                setupDataChannel(peerId, event.channel);
-            };
-
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    sendSignal({ type: 'signal', to: peerId, from: myId, candidate: event.candidate });
-                }
-            };
-
-            if (isOfferer) {
+            if (isInitiator) {
+                const dc = pc.createDataChannel("chat");
+                setupDataChannel(dc, peerId);
+                conn.dc = dc;
+                
                 pc.createOffer().then(offer => {
                     pc.setLocalDescription(offer);
-                    sendSignal({ type: 'signal', to: peerId, from: myId, offer });
+                    sendSignal(peerId, { type: 'offer', sdp: offer });
                 });
             }
 
-            updateUserList();
+            pc.ondatachannel = (e) => {
+                conn.dc = e.channel;
+                setupDataChannel(e.channel, peerId);
+            };
+
+            pc.onicecandidate = (e) => {
+                if (e.candidate) sendSignal(peerId, { type: 'candidate', candidate: e.candidate });
+            };
+            
+            pc.onconnectionstatechange = () => {
+                if(pc.connectionState === 'connected') {
+                    conn.connected = true;
+                    updateUserUI(peerId, true);
+                }
+                if(pc.connectionState === 'disconnected') {
+                     conn.connected = false;
+                     delete connections[peerId];
+                     updateUserUI(peerId, false);
+                }
+            };
+
+            return conn;
         }
 
-        async function handleSignal(data) {
-            if (data.to !== myId) return;
-            const peer = connections[data.from];
-            if (!peer) return;
+        async function handleSignal(from, data) {
+            let conn = connections[from];
+            if (!conn) conn = setupPeer(from, false);
 
-            if (data.offer) {
-                await peer.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                const answer = await peer.pc.createAnswer();
-                await peer.pc.setLocalDescription(answer);
-                sendSignal({ type: 'signal', to: data.from, from: myId, answer });
-            } else if (data.answer) {
-                await peer.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-            } else if (data.candidate) {
-                await peer.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+            if (data.type === 'offer') {
+                await conn.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                const answer = await conn.pc.createAnswer();
+                await conn.pc.setLocalDescription(answer);
+                sendSignal(from, { type: 'answer', sdp: answer });
+            } else if (data.type === 'answer') {
+                await conn.pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            } else if (data.type === 'candidate') {
+                await conn.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
             }
         }
 
-        function setupDataChannel(peerId, dc) {
-            dc.onopen = () => updateUserList();
+        function setupDataChannel(dc, peerId) {
+            dc.onopen = () => {
+                console.log("CHANNEL OPEN with", peerId);
+                updateUserUI(peerId, true);
+                if (activePeerId === peerId) renderMessages();
+            };
             dc.onmessage = (e) => {
-                const data = JSON.parse(e.data);
-                if (data.type === 'delete-msg') {
-                    deleteLocalMessage(peerId, data.msgId);
-                } else if (data.type === 'delete-all') {
+                const msg = JSON.parse(e.data);
+                if (msg.type === 'chat') {
+                    saveMessage(peerId, msg.text, 'in');
+                } else if (msg.type === 'delete') {
+                    deleteMessageLocal(peerId, msg.msgId);
+                } else if (msg.type === 'wipe') {
                     history[peerId] = [];
-                    saveAndRender();
-                } else {
-                    addMessageToHistory(peerId, data, 'in');
+                    saveHistory();
+                    if(activePeerId === peerId) renderMessages();
                 }
             };
         }
 
-        // UI Логика
-        function updateUserList() {
+        // --- UI & LOGIC ---
+
+        function renderUserList(users) {
             const list = document.getElementById('userList');
             list.innerHTML = '';
-            Object.keys(connections).forEach(id => {
-                const btn = document.createElement('div');
-                btn.className = `p-4 rounded-xl cursor-pointer transition ${activePeerId === id ? 'bg-white/20' : 'hover:bg-white/5'} text-white flex items-center gap-3`;
-                btn.onclick = () => openChat(id);
-                btn.innerHTML = `<div class="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center font-bold">${id.substr(0,2).toUpperCase()}</div>
-                                 <div><div class="text-sm font-medium">Device ${id.substr(0,4)}</div><div class="text-xs text-green-400">Online</div></div>`;
-                list.appendChild(btn);
+            
+            if(users.length === 0) {
+                 list.innerHTML = '<div class="text-white/30 text-xs text-center mt-10">Searching...<br>Open this site on another device</div>';
+                 return;
+            }
+
+            users.forEach(uid => {
+                const isConnected = connections[uid]?.connected;
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl cursor-pointer transition flex items-center gap-3 ${activePeerId === uid ? 'bg-white/10' : 'hover:bg-white/5'}`;
+                div.onclick = () => {
+                    initiateConnection(uid); // Пробуем соединиться при клике
+                    openChat(uid);
+                };
+                div.innerHTML = `
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${isConnected ? 'bg-green-500 text-white' : 'bg-white/10 text-white/50'}">
+                        ${uid.substr(0,2)}
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium text-white">${uid}</div>
+                        <div class="text-xs ${isConnected ? 'text-green-400' : 'text-white/30'}">
+                            ${isConnected ? 'Connected' : 'Click to connect'}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
             });
         }
 
-        function openChat(id) {
-            activePeerId = id;
+        function updateUserUI(uid, connected) {
+            // Перерисовка списка для обновления статуса
+            const list = document.getElementById('userList');
+            // Простой способ: мы полагаемся на setInterval, но можно форсировать
+            // renderUserList(...) - тут пропустим для краткости, цикл обновит.
+        }
+
+        function openChat(uid) {
+            activePeerId = uid;
             document.getElementById('chatPlaceholder').classList.add('hidden');
             document.getElementById('chatWindow').classList.remove('hidden');
-            document.getElementById('activeUserName').innerText = `Device ${id}`;
-            updateUserList();
+            document.getElementById('activeUserName').innerText = `Device ${uid}`;
+            document.getElementById('activeUserAvatar').innerText = uid.substr(0,2);
             renderMessages();
         }
 
         function sendMessage() {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
-            if (!text || !activePeerId) return;
+            if (!text || !activePeerId || !connections[activePeerId]?.dc) return;
 
-            const msg = { id: Date.now(), text, type: 'text' };
-            connections[activePeerId].dc.send(JSON.stringify(msg));
-            addMessageToHistory(activePeerId, msg, 'out');
+            const msgId = Date.now();
+            const payload = { type: 'chat', text, id: msgId };
+            
+            connections[activePeerId].dc.send(JSON.stringify(payload));
+            saveMessage(activePeerId, text, 'out', msgId);
             input.value = '';
         }
 
-        function addMessageToHistory(peerId, msg, direction) {
+        document.getElementById('msgInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function saveMessage(peerId, text, direction, id = Date.now()) {
             if (!history[peerId]) history[peerId] = [];
-            history[peerId].push({ ...msg, direction });
-            saveAndRender();
+            history[peerId].push({ id, text, direction });
+            saveHistory();
+            if (activePeerId === peerId) renderMessages();
         }
 
-        function saveAndRender() {
+        function saveHistory() {
             localStorage.setItem('chatHistory', JSON.stringify(history));
-            renderMessages();
         }
 
         function renderMessages() {
             const container = document.getElementById('messages');
             container.innerHTML = '';
-            if (!history[activePeerId]) return;
-
-            history[activePeerId].forEach(msg => {
+            const msgs = history[activePeerId] || [];
+            
+            msgs.forEach(msg => {
                 const div = document.createElement('div');
-                div.className = `max-w-[70%] p-3 rounded-2xl text-white relative group ${msg.direction === 'out' ? 'message-out' : 'message-in'}`;
+                div.className = `p-3 max-w-[75%] relative group text-sm ${msg.direction === 'out' ? 'message-out' : 'message-in'}`;
                 div.innerHTML = `
                     ${msg.text}
-                    <button onclick="requestDelete('${msg.id}')" class="absolute -left-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition text-red-400">
-                        <i data-lucide="x-circle" class="w-4"></i>
+                    <button onclick="reqDelete('${msg.id}')" class="absolute top-1/2 -translate-y-1/2 ${msg.direction === 'out' ? '-left-8' : '-right-8'} opacity-0 group-hover:opacity-100 transition text-red-400 p-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 `;
                 container.appendChild(div);
@@ -263,35 +321,39 @@
             lucide.createIcons();
         }
 
-        function requestDelete(msgId) {
-            // Удалить у себя
-            deleteLocalMessage(activePeerId, msgId);
-            // Отправить запрос на удаление у собеседника
-            connections[activePeerId].dc.send(JSON.stringify({ type: 'delete-msg', msgId }));
-        }
-
-        function deleteLocalMessage(peerId, msgId) {
-            history[peerId] = history[peerId].filter(m => m.id != msgId);
-            saveAndRender();
-        }
-
-        function deleteChatWithActiveUser() {
-            if (confirm('Удалить историю у обоих?')) {
-                connections[activePeerId].dc.send(JSON.stringify({ type: 'delete-all' }));
-                history[activePeerId] = [];
-                saveAndRender();
+        function reqDelete(msgId) {
+            deleteMessageLocal(activePeerId, msgId);
+            if(connections[activePeerId]?.dc) {
+                connections[activePeerId].dc.send(JSON.stringify({ type: 'delete', msgId }));
             }
         }
 
-        function clearAllHistory() {
-            if (confirm('Очистить ВООБЩЕ всё?')) {
-                localStorage.clear();
-                history = {};
+        function deleteMessageLocal(peerId, msgId) {
+            if(history[peerId]) {
+                history[peerId] = history[peerId].filter(m => m.id != msgId);
+                saveHistory();
+                if(activePeerId === peerId) renderMessages();
+            }
+        }
+
+        function deleteChatWithActiveUser() {
+            if(confirm('Delete history for both?')) {
+                if(connections[activePeerId]?.dc) {
+                    connections[activePeerId].dc.send(JSON.stringify({ type: 'wipe' }));
+                }
+                history[activePeerId] = [];
+                saveHistory();
                 renderMessages();
             }
         }
 
-        initConnection();
+        function clearAllHistory() {
+            if(confirm('Wipe everything?')) {
+                localStorage.clear();
+                history = {};
+                location.reload();
+            }
+        }
     </script>
 </body>
 </html>
