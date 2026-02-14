@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirDrop P2P Glass</title>
+    <!-- Библиотеки -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        #reader video {
+            border-radius: 16px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex items-center justify-center">
+
+    <div class="glass w-full h-full max-w-6xl flex overflow-hidden shadow-2xl">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-20 md:w-80 border-r border-white/10 flex flex-col">
+            <div class="p-6">
+                <h1 class="hidden md:block text-white font-semibold text-xl tracking-tight">AirConnect</h1>
+                <div class="md:hidden flex justify-center"><i data-lucide="share-2" class="text-white"></i></div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-2" id="peer-list">
+                <!-- Сюда будут добавляться активные чаты -->
+                <p class="text-white/40 text-xs uppercase px-4 py-2 hidden md:block">Активные устройства</p>
+            </div>
+
+            <div class="p-4 border-t border-white/10">
+                <button onclick="showMyQR()" class="w-full glass-card p-3 rounded-xl flex items-center justify-center gap-3 text-white hover:scale-105 active:scale-95 duration-200">
+                    <i data-lucide="qr-code"></i>
+                    <span class="hidden md:block">Мой код</span>
+                </button>
+                <button onclick="startScanner()" class="mt-2 w-full bg-white/20 p-3 rounded-xl flex items-center justify-center gap-3 text-white hover:bg-white/30 duration-200 md:hidden">
+                    <i data-lucide="scan"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN AREA -->
+        <main class="flex-1 flex flex-col bg-white/5">
+            <!-- Header -->
+            <header class="p-6 border-b border-white/10 flex justify-between items-center">
+                <div>
+                    <h2 id="chat-target-name" class="text-white font-medium text-lg">Выберите устройство</h2>
+                    <p id="chat-target-status" class="text-white/50 text-sm">Ваш ID: <span id="my-id" class="select-all font-mono">...</span></p>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('file-input').click()" class="p-2 text-white/70 hover:text-white transition">
+                        <i data-lucide="paperclip"></i>
+                    </button>
+                    <input type="file" id="file-input" class="hidden" onchange="sendFile(this.files[0])">
+                </div>
+            </header>
+
+            <!-- Chat Messages -->
+            <div id="messages" class="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar flex flex-col">
+                <div class="text-center text-white/30 my-auto">
+                    <i data-lucide="message-square" class="mx-auto mb-2 w-12 h-12 opacity-20"></i>
+                    <p>Нет сообщений. Подключитесь по ID или QR.</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <footer class="p-6">
+                <form id="chat-form" class="flex gap-3">
+                    <input type="text" id="msg-input" placeholder="Напишите что-нибудь..." 
+                        class="flex-1 bg-white/10 border border-white/10 rounded-2xl px-6 py-3 text-white placeholder-white/40 outline-none focus:border-white/30 transition">
+                    <button type="submit" class="bg-white text-indigo-600 p-4 rounded-2xl hover:bg-indigo-50 transition shadow-lg active:scale-95">
+                        <i data-lucide="send"></i>
+                    </button>
+                </form>
+            </footer>
+        </main>
+    </div>
+
+    <!-- MODAL QR -->
+    <div id="qr-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="glass p-8 max-w-sm w-full text-center relative">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+            <h3 class="text-white text-xl mb-4">Сканируйте для связи</h3>
+            <div id="qrcode" class="bg-white p-4 rounded-2xl inline-block mb-4 shadow-xl"></div>
+            <p class="text-white/60 text-sm mb-6">Ваш уникальный ID: <br><span id="my-id-display" class="font-mono font-bold text-white">...</span></p>
+            <button onclick="startScanner()" class="w-full py-3 bg-indigo-500 text-white rounded-xl shadow-lg">Открыть сканер</button>
+        </div>
+    </div>
+
+    <!-- MODAL SCANNER -->
+    <div id="scanner-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+        <div class="glass p-6 max-w-md w-full relative">
+            <button onclick="stopScanner()" class="absolute top-4 right-4 text-white/50 hover:text-white z-10"><i data-lucide="x"></i></button>
+            <div id="reader" class="w-full"></div>
+            <p class="text-white text-center mt-4">Наведите камеру на QR код другого устройства</p>
+        </div>
+    </div>
+
+    <script>
+        let peer;
+        let activeConn = null;
+        let connections = {}; // Список всех подключений по ID
+
+        // Инициализация PeerJS
+        function initPeer() {
+            peer = new Peer(null, { debug: 2 });
+
+            peer.on('open', (id) => {
+                document.getElementById('my-id').innerText = id;
+                document.getElementById('my-id-display').innerText = id;
+                generateQR(id);
+            });
+
+            // Слушаем входящие подключения
+            peer.on('connection', (conn) => {
+                setupConnection(conn);
+            });
+        }
+
+        function setupConnection(conn) {
+            conn.on('open', () => {
+                connections[conn.peer] = conn;
+                activeConn = conn;
+                addPeerToSidebar(conn.peer);
+                updateChatHeader(conn.peer);
+                addMessage('Система', `Устройство ${conn.peer} подключено`, 'system');
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'file') {
+                    const blob = new Blob([data.file], { type: data.fileType });
+                    const url = URL.createObjectURL(blob);
+                    addMessage(conn.peer, `<a href="${url}" download="${data.fileName}" class="underline text-blue-300">📁 Файл: ${data.fileName}</a>`, 'in');
+                } else {
+                    addMessage(conn.peer, data, 'in');
+                }
+            });
+
+            conn.on('close', () => {
+                delete connections[conn.peer];
+                document.getElementById(`peer-${conn.peer}`)?.remove();
+            });
+        }
+
+        // Интерфейс: Сообщения
+        function addMessage(sender, text, type) {
+            const container = document.getElementById('messages');
+            const align = type === 'out' ? 'items-end' : (type === 'system' ? 'items-center' : 'items-start');
+            const color = type === 'out' ? 'bg-indigo-500 text-white' : (type === 'system' ? 'text-white/30 text-xs' : 'bg-white/10 text-white border border-white/10');
+            
+            const msgHtml = `
+                <div class="flex flex-col ${align} animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div class="max-w-[80%] px-4 py-2 rounded-2xl ${color}">
+                        ${text}
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', msgHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Управление подключениями
+        function connectToPeer(targetId) {
+            if (connections[targetId]) return;
+            const conn = peer.connect(targetId);
+            setupConnection(conn);
+            stopScanner();
+            closeModal();
+        }
+
+        function addPeerToSidebar(id) {
+            if (document.getElementById(`peer-${id}`)) return;
+            const list = document.getElementById('peer-list');
+            const item = `
+                <button onclick="switchChat('${id}')" id="peer-${id}" class="w-full glass-card p-4 rounded-2xl text-white flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center">
+                        <i data-lucide="smartphone" class="w-5 h-5"></i>
+                    </div>
+                    <div class="hidden md:block text-left">
+                        <div class="text-sm font-semibold truncate w-32">${id}</div>
+                        <div class="text-[10px] text-green-400">Онлайн</div>
+                    </div>
+                </button>
+            `;
+            list.insertAdjacentHTML('beforeend', item);
+            lucide.createIcons();
+        }
+
+        function switchChat(id) {
+            activeConn = connections[id];
+            updateChatHeader(id);
+            document.getElementById('messages').innerHTML = '';
+            addMessage('Система', `Чат с ${id} открыт`, 'system');
+        }
+
+        function updateChatHeader(id) {
+            document.getElementById('chat-target-name').innerText = `Устройство: ${id}`;
+            document.getElementById('chat-target-status').innerText = 'Прямое соединение активно';
+        }
+
+        // Отправка данных
+        document.getElementById('chat-form').onsubmit = (e) => {
+            e.preventDefault();
+            const input = document.getElementById('msg-input');
+            if (input.value && activeConn) {
+                activeConn.send(input.value);
+                addMessage('Я', input.value, 'out');
+                input.value = '';
+            }
+        };
+
+        async function sendFile(file) {
+            if (!file || !activeConn) return;
+            addMessage('Я', `Отправка файла: ${file.name}...`, 'out');
+            
+            // Читаем файл в ArrayBuffer
+            const buffer = await file.arrayBuffer();
+            activeConn.send({
+                type: 'file',
+                file: buffer,
+                fileName: file.name,
+                fileType: file.type
+            });
+            addMessage('Я', `Вы отправили файл: ${file.name}`, 'out');
+        }
+
+        // QR и Сканер
+        function generateQR(id) {
+            new QRCode(document.getElementById("qrcode"), {
+                text: id,
+                width: 200,
+                height: 200,
+                colorDark : "#4f46e5",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }
+
+        function showMyQR() {
+            document.getElementById('qr-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('qr-modal').style.display = 'none';
+        }
+
+        let html5QrCode;
+        function startScanner() {
+            closeModal();
+            document.getElementById('scanner-modal').style.display = 'flex';
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start(
+                { facingMode: "environment" }, 
+                { fps: 10, qrbox: { width: 250, height: 250 } },
+                (decodedText) => {
+                    connectToPeer(decodedText);
+                }
+            ).catch(err => alert("Ошибка камеры: " + err));
+        }
+
+        function stopScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scanner-modal').style.display = 'none';
+                });
+            } else {
+                document.getElementById('scanner-modal').style.display = 'none';
+            }
+        }
+
+        // Запуск
+        initPeer();
+        lucide.createIcons();
+    </script>
+</body>
+</html>
